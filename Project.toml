@@ -1,7 +1,7 @@
 name = "ThinkChess"
 uuid = "e67ffba2-2990-4065-94dd-65a25027cb52"
 authors = ["Oliver Krischer"]
-version = "1.0.0-DEV"
+version = "0.1.0-DEV"
 
 [compat]
 julia = "1"

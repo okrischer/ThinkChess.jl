@@ -1,5 +1,5 @@
 module ThinkChess
 
-# Write your package code here.
+include("pieces.jl")
 
 end
