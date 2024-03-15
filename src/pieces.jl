@@ -2,44 +2,44 @@ abstract type Piece end
 
 mutable struct King <: Piece
   const white::Bool
-  value::UInt16
-  row::UInt8
-  col::UInt8
+  value::Int
+  row::Int
+  col::Int
 end
 
 mutable struct Queen <: Piece
   const white::Bool
-  value::UInt16
-  row::UInt8
-  col::UInt8
+  value::Int
+  row::Int
+  col::Int
 end
 
 mutable struct Rook <: Piece
   const white::Bool
-  value::UInt16
-  row::UInt8
-  col::UInt8
+  value::Int
+  row::Int
+  col::Int
 end
 
 mutable struct Knight <: Piece
   const white::Bool
-  value::UInt16
-  row::UInt8
-  col::UInt8
+  value::Int
+  row::Int
+  col::Int
 end
 
 mutable struct Bishop <: Piece
   const white::Bool
-  value::UInt16
-  row::UInt8
-  col::UInt8
+  value::Int
+  row::Int
+  col::Int
 end
 
 mutable struct Pawn <: Piece
   const white::Bool
-  value::UInt16
-  row::UInt8
-  col::UInt8
+  value::Int
+  row::Int
+  col::Int
 end
 
 function initialize_board()
@@ -82,4 +82,135 @@ function initialize_board()
   board[8,8] = Rook(true, 500, 8, 8)
 
   return board
+end
+
+function isValid(pc::King, r::Int, c::Int, bd::Matrix{Union{Missing, Piece}})
+  to = bd[r,c]
+  valid = abs(pc.row - r) <= 1 && abs(pc.col - c) <= 1
+  return valid && (ismissing(to) || to.white != pc.white)
+end
+
+function isValid(pc::Knight, r::Int, c::Int, bd::Matrix{Union{Missing, Piece}})
+  to = bd[r,c]
+  valid = (abs(pc.row - r) == 1 && abs(pc.col - c) == 2) ||
+          (abs(pc.row - r) == 2 && abs(pc.col - c) == 1)
+  return valid && (ismissing(to) || to.white != pc.white)
+end
+
+function isValid(pc::Rook, r::Int, c::Int, bd::Matrix{Union{Missing, Piece}})
+  to = bd[r,c]
+  valid = pc.row == r || pc.col == c
+  valid || return false
+
+  if pc.row == r # same row
+    if c < pc.col # left to Rook
+      for cc = c+1:pc.col-1
+        ismissing(bd[r,cc]) || return false
+      end
+    else # right to Rook
+      for cc = pc.col+1:c-1
+        ismissing(bd[r,cc]) || return false
+      end
+    end
+  end # same row
+
+  if pc.col == c # same column
+    if r < pc.row # up to Rook
+      for rr = r+1:pc.row-1
+        ismissing(bd[rr,c]) || return false
+      end
+    else # down to Rook
+      for rr = pc.row+1:r-1
+        ismissing(bd[rr,c]) || return false
+      end
+    end
+  end # same column
+
+  return valid && (ismissing(to) || to.white != pc.white)
+end
+
+function isValid(pc::Bishop, r::Int, c::Int, bd::Matrix{Union{Missing, Piece}})
+  to = bd[r,c]
+  valid = r-c == pc.row - pc.col || r+c == pc.row+pc.col
+  valid || return false
+
+  if r-c == pc.row-pc.col # same major diagonal
+    if r < pc.row # upper
+      for rr = r+1:pc.row-1
+        for cc = c+1:pc.col-1
+          if rr-cc == pc.row - pc.col
+            ismissing(bd[rr,cc]) || return false
+          end
+        end
+      end
+    else # lower
+      for rr = pc.row+1:r-1
+        for cc = pc.col+1:c-1
+          if rr-cc == pc.row - pc.col
+            ismissing(bd[rr,cc]) || return false
+          end
+        end
+      end
+    end
+  end
+
+  if r+c == pc.row+pc.col # same minor diagonal
+    if r < pc.row # upper
+      for rr = r+1:pc.row-1
+        for cc = pc.col+1:c-1
+          if rr+cc == pc.row + pc.col
+            ismissing(bd[rr,cc]) || return false
+          end
+        end
+      end
+    else # lower
+      for rr = pc.row+1:r-1
+        for cc = c+1:pc.col-1
+          if rr+cc == pc.row + pc.col
+            ismissing(bd[rr,cc]) || return false
+          end
+        end
+      end
+    end
+  end
+
+  return valid && (ismissing(to) || to.white != pc.white)
+end
+
+function isValid(pc::Queen, r::Int, c::Int, bd::Matrix{Union{Missing, Piece}})
+  rook = Rook(true, 500, pc.row, pc.col)
+  bishop = Bishop(true, 300, pc.row, pc.col)
+  return isValid(rook, r, c, bd) || isValid(bishop, r, c, bd)
+end
+
+function isValid(pc::Pawn, r::Int, c::Int, bd::Matrix{Union{Missing, Piece}})
+  to = bd[r,c]
+
+  if pc.white # white Pawn
+    # move
+    (r == pc.row-1 && c == pc.col) && ismissing(to) && return true
+    # capture
+    (r == pc.row-1 && (c == pc.col-1 || c == pc.col+1)) &&
+      (!ismissing(to) && to.white != pc.white) &&
+      return true
+    # initial move
+    if (r == pc.row-2 && c == pc.col)
+      one = bd[pc.row-1, c]
+      (ismissing(one) && ismissing(to)) && return true
+    end
+  else # black Pawn
+    # move
+    (r == pc.row+1 && c == pc.col) && ismissing(to) && return true
+    # capture
+    (r == pc.row+1 && (c == pc.col-1 || c == pc.col+1)) &&
+      (!ismissing(to) && to.white != pc.white) &&
+      return true
+    # initial move
+    if (r == pc.row+2 && c == pc.col)
+      one = bd[pc.row+1, c]
+      (ismissing(one) && ismissing(to)) && return true
+    end
+  end
+
+  return false
 end
